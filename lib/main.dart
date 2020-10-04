@@ -6,6 +6,9 @@ import 'package:android_alarm_manager/android_alarm_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+  
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 /// The [SharedPreferences] key to access the alarm fire count.
 const String countKey = 'count';
@@ -55,26 +58,36 @@ class _AlarmHomePage extends StatefulWidget {
 }
 
 class _AlarmHomePageState extends State<_AlarmHomePage> {
+
   @override
   void initState() {
     super.initState();
     AndroidAlarmManager.initialize();
-    //port.listen((_) async => await playMusic());
+
+    port.listen((_) async => await _incrementCounter());
   }
 
-  //Future<void> playMusic() async {
-    //print('Play');
-    //await prefs.reload();
-  //}
+  Future<void> _incrementCounter() async {
+    await prefs.reload();
+  }
 
+  // The background
   static SendPort uiSendPort;
 
+  // The callback for our alarm
   static Future<void> callback() async {
-    print('Alarm fired!');
+    //play music
 
+    // Get the previous cached count and increment it.
+    final prefs = await SharedPreferences.getInstance();
+    int currentCount = prefs.getInt(countKey);
+    await prefs.setInt(countKey, currentCount + 1);
+
+    // This will be null if we're running in the background.
     uiSendPort ??= IsolateNameServer.lookupPortByName(isolateName);
     uiSendPort?.send(null);
   }
+
 
   @override
   Widget build(BuildContext context) {
